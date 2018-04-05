@@ -7,6 +7,91 @@
     <groupId>com.messless</groupId>
     <artifactId>kitchen-supplies</artifactId>
     <version>1.0.0</version>
+    <modules>
+        <module>kitchen-api-sdk</module>
+        <module>kitchen-cache</module>
+        <module>kitchen-common-interface</module>
+        <module>kitchen-market</module>
+    </modules>
+    <packaging>pom</packaging>
+
+    <!--指定要发布到的Maven私服-->
+    <distributionManagement>
+        <repository>
+            <id>release</id>
+            <name>local private nexus</name>
+            <url>http://192.168.10.38:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Nexus Snapshot Repository</name>
+            <url>http://192.168.10.38:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <!-- 通用属性配置 -->
+    <properties>
+        <!-- 指定Maven编译时使用的编码 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- 默认 JDK 版本 -->
+        <java.version>1.8</java.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+
+        <!-- 版本号 -->
+        <spring.version>4.3.13.RELEASE</spring.version><!--与应用中的SpringBoot依赖版本一致-->
+        <junit.version>4.12</junit.version>
+        <retrofit.version>2.2.0</retrofit.version>
+        <fastjson.version>1.2.44</fastjson.version>
+        <lang3.version>3.3.2</lang3.version>
+        <javatuples.version>1.2</javatuples.version>
+        <jedis.version>2.9.0</jedis.version>
+        <slf4j.version>1.7.9</slf4j.version>
+
+        <!--Maven中央仓库地址，用于提交版本-->
+        <nexus-releases-repository-url>http://192.168.10.38:8081/repository/maven-releases/</nexus-releases-repository-url>
+        <nexus-snapshot-repository-url>http://192.168.10.38:8081/repository/maven-snapshots/</nexus-snapshot-repository-url>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <!-- 测试相关 -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${spring.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
