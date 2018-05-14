@@ -20,12 +20,12 @@
         <repository>
             <id>release</id>
             <name>local private nexus</name>
-            <url>http://192.168.10.38:8081/repository/maven-releases/</url>
+            <url>http://192.168.3.20:8081/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
             <name>Nexus Snapshot Repository</name>
-            <url>http://192.168.10.38:8081/repository/maven-snapshots/</url>
+            <url>http://192.168.3.20:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -52,8 +52,8 @@
         <slf4j.version>1.7.9</slf4j.version>
 
         <!--Maven中央仓库地址，用于提交版本-->
-        <nexus-releases-repository-url>http://192.168.10.38:8081/repository/maven-releases/</nexus-releases-repository-url>
-        <nexus-snapshot-repository-url>http://192.168.10.38:8081/repository/maven-snapshots/</nexus-snapshot-repository-url>
+        <nexus-releases-repository-url>http://192.168.3.20:8081/repository/maven-releases/</nexus-releases-repository-url>
+        <nexus-snapshot-repository-url>http://192.168.3.20:8081/repository/maven-snapshots/</nexus-snapshot-repository-url>
     </properties>
 
     <dependencies>
