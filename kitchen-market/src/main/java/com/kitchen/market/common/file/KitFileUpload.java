@@ -17,25 +17,44 @@ public class KitFileUpload {
      * 注意！ 不支持分布式部署的文件访问
      *
      * @param inputStream 文件二进制流
-     * @param originalFileName 上传时的文件名称
+     * @param originalFileFullName 上传时的文件名称（含文件后缀）
      * @param rootPath 文件存储根目录（通常为文件下载服务的发布目录）
      * @param relativePath 相对rootPath的目录（可为空）
      * @return URI
      */
-    public static String uploadToLocal(InputStream inputStream, String originalFileName, String rootPath, String relativePath) throws IOException {
-        String fileSuffix = originalFileName.substring(originalFileName.lastIndexOf("."));
-        String fileName = UUID.randomUUID().toString().replace("-", "").toUpperCase() + fileSuffix;
+    public static String uploadToLocal(InputStream inputStream, String originalFileFullName, String rootPath, String relativePath) throws IOException {
+        return uploadToLocal(inputStream, originalFileFullName, rootPath, relativePath, true);
+    }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        String dateDir = sdf.format(new Date());
+    public static String uploadToLocal(InputStream inputStream, String originalFileFullName, String rootPath, String relativePath, Boolean addDateDir) throws IOException {
+        String finalFileName = UUID.randomUUID().toString().replace("-", "").toUpperCase();
+
+        return uploadToLocal(inputStream, originalFileFullName, finalFileName, rootPath, relativePath, addDateDir);
+    }
+
+    public static String uploadToLocal(InputStream inputStream, String originalFileFullName, String finalFileName, String rootPath, String relativePath, Boolean addDateDir) throws IOException {
+        String fileSuffix = originalFileFullName.substring(originalFileFullName.lastIndexOf("."));
+        String finalFileFullName = finalFileName + fileSuffix;
 
         // 合规处理
         rootPath = getCompliancePath(rootPath);
         relativePath = getComplianceFullPath(relativePath);
 
-        String path = rootPath + relativePath + File.separator + dateDir;
+        // 是否添加时间文件夹
+        if (addDateDir) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            String dateDir = sdf.format(new Date());
+            relativePath = relativePath + File.separator + dateDir;
+        }
 
-        File targetFile = new File(path, fileName);
+        return upload(inputStream, rootPath, relativePath, finalFileFullName);
+    }
+
+    private static String upload(InputStream inputStream, String rootPath, String relativePath, String fileFullName) throws IOException {
+
+        String path = rootPath + relativePath;
+
+        File targetFile = new File(path, fileFullName);
         if(!targetFile.exists()) {
             targetFile.getParentFile().mkdirs();
         }
@@ -71,7 +90,7 @@ public class KitFileUpload {
             inputStream.close();
         }
 
-        String uri = relativePath + File.separator + dateDir + File.separator + fileName;
+        String uri = relativePath + File.separator + fileFullName;
 
         return uri;
     }
