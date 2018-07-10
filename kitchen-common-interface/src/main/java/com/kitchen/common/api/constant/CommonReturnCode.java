@@ -26,6 +26,9 @@ public enum CommonReturnCode implements IReturnCode {
 
     // 10000 - 网关异常
     GATEWAY_PARAM_ERROR(CommonReturnCode.RETURN_CODE_10000, CommonReturnCode.RETURN_CODE_10000_DESC, "PARAM_ERROR", "请求的接口参数无效"),
+    GATEWAY_PARAM_FORMAT_ERROR(CommonReturnCode.RETURN_CODE_10000, CommonReturnCode.RETURN_CODE_10000_DESC, "PARAM_FORMAT_ERROR", "请求参数的语法格式有误（400）"),
+    GATEWAY_UNSUPPORTED_METHOD_TYPE(CommonReturnCode.RETURN_CODE_10000, CommonReturnCode.RETURN_CODE_10000_DESC, "UNSUPPORTED_METHOD_TYPE", "不支持的请求方法类型（405）"),
+    GATEWAY_UNSUPPORTED_MEDIA_TYPE(CommonReturnCode.RETURN_CODE_10000, CommonReturnCode.RETURN_CODE_10000_DESC, "UNSUPPORTED_MEDIA_TYPE", "不支持请求的媒体类型（415）"),
 
     // 11000 - 签名验证失败
     GATEWAY_SIGN_PARAMS_ABSENT(CommonReturnCode.RETURN_CODE_11000, CommonReturnCode.RETURN_CODE_11000_DESC, "SIGN_PARAMS_ABSENT", "缺少签名参数"),
