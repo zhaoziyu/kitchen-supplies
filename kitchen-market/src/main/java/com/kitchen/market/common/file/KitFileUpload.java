@@ -112,6 +112,8 @@ public class KitFileUpload {
             if (startIndex != 0) {
                 path = File.separator + path;
             }
+        } else {
+            path = "";
         }
         return path;
     }
