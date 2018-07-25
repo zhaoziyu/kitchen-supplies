@@ -25,8 +25,7 @@ public class KitEncryptionFileByAES {
      * @throws IOException
      */
     public static void encryptFile(String srcFile, String goalFile, String keyStr) throws GeneralSecurityException, IOException {
-        byte[] byteKeyStr = keyStr.getBytes();
-        AESAlgorithmImpl.encryptFile(srcFile, goalFile, byteKeyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
+        AESAlgorithmImpl.encryptFile(srcFile, goalFile, keyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
     }
 
     /**
@@ -40,16 +39,14 @@ public class KitEncryptionFileByAES {
      */
     public static void decryptFile(String srcFile, String goalFile, String keyStr) throws GeneralSecurityException, IOException {
         byte[] byteKeyStr = keyStr.getBytes();
-        AESAlgorithmImpl.decryptFile(srcFile, goalFile, byteKeyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
+        AESAlgorithmImpl.decryptFile(srcFile, goalFile, keyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
     }
 
     public static byte[] encryptFile(byte[] data, String keyStr) throws GeneralSecurityException, IOException {
-        byte[] byteKeyStr = keyStr.getBytes();
-        return AESAlgorithmImpl.encryptFile(data, byteKeyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
+        return AESAlgorithmImpl.encryptFile(data, keyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
     }
     public static byte[] decryptFile(byte[] data, String keyStr) throws GeneralSecurityException, IOException {
-        byte[] byteKeyStr = keyStr.getBytes();
-        return AESAlgorithmImpl.decryptFile(data, byteKeyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
+        return AESAlgorithmImpl.decryptFile(data, keyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
     }
 
     /**
@@ -65,8 +62,7 @@ public class KitEncryptionFileByAES {
         // 先压缩文件
         KitZipFile.zip(srcFile, temp.getAbsolutePath());
         // 对文件加密
-        byte[] byteKeyStr = keyStr.getBytes();
-        AESAlgorithmImpl.decryptFile(srcFile, goalFile, byteKeyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
+        AESAlgorithmImpl.decryptFile(srcFile, goalFile, keyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
 
         temp.delete();
     }
@@ -82,8 +78,7 @@ public class KitEncryptionFileByAES {
         File temp = new File(UUID.randomUUID().toString() + ".zip");
         temp.deleteOnExit();
         // 先对文件解密
-        byte[] byteKeyStr = keyStr.getBytes();
-        AESAlgorithmImpl.decryptFile(srcFile, goalFile, byteKeyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
+        AESAlgorithmImpl.decryptFile(srcFile, goalFile, keyStr, AESAlgorithmType.AES, AESWorkingType.CBC, AESPaddingType.PKCS5Padding);
         // 解压缩
         KitZipFile.unZip(temp.getAbsolutePath(), goalFile);
         temp.delete();

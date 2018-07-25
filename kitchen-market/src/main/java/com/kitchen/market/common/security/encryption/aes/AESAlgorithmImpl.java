@@ -13,31 +13,31 @@ import java.security.spec.InvalidKeySpecException;
  * @date 2017-09-08
  */
 class AESAlgorithmImpl {
-    public static void encryptFile(String srcFile, String goalFile, byte[] key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
+    public static void encryptFile(String srcFile, String goalFile, String key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
         operateFile(srcFile, goalFile, Cipher.ENCRYPT_MODE, key, algorithm.getName(), workingMode.getName(), padding.getName());
     }
-    public static void decryptFile(String srcFile, String goalFile, byte[] key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
+    public static void decryptFile(String srcFile, String goalFile, String key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
         operateFile(srcFile, goalFile, Cipher.DECRYPT_MODE, key, algorithm.getName(), workingMode.getName(), padding.getName());
     }
 
-    public static byte[] encryptFile(byte[] data, byte[] key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
+    public static byte[] encryptFile(byte[] data, String key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
         return operateFile(data, Cipher.ENCRYPT_MODE, key, algorithm.getName(), workingMode.getName(), padding.getName());
     }
-    public static byte[] decryptFile(byte[] data, byte[] key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
+    public static byte[] decryptFile(byte[] data, String key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) throws GeneralSecurityException, IOException {
         return operateFile(data, Cipher.DECRYPT_MODE, key, algorithm.getName(), workingMode.getName(), padding.getName());
     }
 
-    public static byte[] encryptText(byte[] data, byte[] key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) {
-        return operateText(Cipher.ENCRYPT_MODE, data, key, algorithm.getName(), workingMode.getName(), padding.getName());
+    public static byte[] encryptText(byte[] data, String key, String iv, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) {
+        return operateText(Cipher.ENCRYPT_MODE, data, key, iv, algorithm.getName(), workingMode.getName(), padding.getName());
     }
-    public static byte[] decryptText(byte[] data, byte[] key, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) {
-        return operateText(Cipher.DECRYPT_MODE, data, key, algorithm.getName(), workingMode.getName(), padding.getName());
+    public static byte[] decryptText(byte[] data, String key, String iv, AESAlgorithmType algorithm, AESWorkingType workingMode, AESPaddingType padding) {
+        return operateText(Cipher.DECRYPT_MODE, data, key, iv, algorithm.getName(), workingMode.getName(), padding.getName());
     }
 
-    private static byte[] operateText(int mode, byte[] data, byte[] key, String algorithm, String workingMode, String padding) {
+    private static byte[] operateText(int mode, byte[] data, String key, String iv, String algorithm, String workingMode, String padding) {
         try {
             // 创建加密工具
-            Cipher cipher = createCipher(mode, key, algorithm, workingMode, padding);
+            Cipher cipher = createCipher(mode, key, iv, algorithm, workingMode, padding);
             // 执行加密
             return cipher.doFinal(data);
         } catch (Exception e) {
@@ -45,11 +45,14 @@ class AESAlgorithmImpl {
         }
     }
 
-    private static void operateFile(String srcFile, String goalFile, int mode, byte[] key, String algorithm, String workingMode, String padding) throws GeneralSecurityException, IOException {
+    private static void operateFile(String srcFile, String goalFile, int mode, String key, String algorithm, String workingMode, String padding) throws GeneralSecurityException, IOException {
+        operateFile(srcFile, goalFile, mode, key, null, algorithm, workingMode, padding);
+    }
+    private static void operateFile(String srcFile, String goalFile, int mode, String key, String iv, String algorithm, String workingMode, String padding) throws GeneralSecurityException, IOException {
         FileInputStream fis = null;
         FileOutputStream fos = null;
         // 创建加密工具
-        Cipher cipher = createCipher(mode, key, algorithm, workingMode, padding);
+        Cipher cipher = createCipher(mode, key, iv, algorithm, workingMode, padding);
         try {
             fis = new FileInputStream(srcFile);
             fos = new FileOutputStream(mkdirFiles(goalFile));
@@ -68,11 +71,16 @@ class AESAlgorithmImpl {
             }
         }
     }
-    private static byte[] operateFile(byte[] data, int mode, byte[] key, String algorithm, String workingMode, String padding) throws GeneralSecurityException, IOException {
+
+
+    private static byte[] operateFile(byte[] data, int mode, String key, String algorithm, String workingMode, String padding) throws GeneralSecurityException, IOException {
+        return operateFile(data, mode, key, null, algorithm, workingMode, padding);
+    }
+    private static byte[] operateFile(byte[] data, int mode, String key, String iv, String algorithm, String workingMode, String padding) throws GeneralSecurityException, IOException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         // 创建加密工具
-        Cipher cipher = createCipher(mode, key, algorithm, workingMode, padding);
+        Cipher cipher = createCipher(mode, key, iv, algorithm, workingMode, padding);
         try {
 
             crypt(inputStream, outputStream, cipher);
@@ -104,16 +112,22 @@ class AESAlgorithmImpl {
      * @throws InvalidAlgorithmParameterException
      * @throws InvalidKeyException
      */
-    private static Cipher createCipher(int mode, byte[] key, String algorithm, String workingMode, String padding) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
+    private static Cipher createCipher(int mode, String key, String customIv, String algorithm, String workingMode, String padding) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
         String fullAlg = algorithm + "/" + workingMode + "/" + padding;
-
-        SecretKey secretKey = getSecretKeyByGenerator(algorithm, key);
-
         Cipher cipher = Cipher.getInstance(fullAlg);
+
+        key = getInvalidKey(key, cipher.getBlockSize());// 加密密钥容错
+        SecretKey secretKey = getSecretKeyBySpec(algorithm, key.getBytes());
+
         if (!AESWorkingType.ECB.getName().equalsIgnoreCase(workingMode)) {
             // 非ECB工作模式都需要传入向量
-            byte[] iv = initIv(algorithm, workingMode, padding);
-            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            if (customIv != null) {
+                customIv = getInvalidIv(customIv, cipher.getBlockSize());// 加密向量容错
+            } else {
+                // 使用默认向量
+                customIv = getInvalidIv("", cipher.getBlockSize());
+            }
+            IvParameterSpec ivSpec = new IvParameterSpec(customIv.getBytes());
             cipher.init(mode, secretKey, ivSpec);
         } else {
             // ECB工作模式无需向量
@@ -121,30 +135,19 @@ class AESAlgorithmImpl {
         }
         return cipher;
     }
-
-    /**
-     * 处理密钥规范
-     *
-     * AES 128位密钥（默认）
-     *
-     * @param key
-     * @param algorithm
-     * @return
-     */
-    private static byte[] getInvalidKey(byte[] key, String algorithm) {
-        int keySize = 0;
-        if (AESAlgorithmType.AES.getName().equals(algorithm)) {
-            keySize = 128;// DES算法需要8位密钥
+    private static String getInvalidIv(String iv, int blockSize) {
+        return getInvalidKey(iv, blockSize);
+    }
+    private static String getInvalidKey(String key, int blockSize) {
+        if (key.length() == blockSize) {
+            return key;
+        } else if (key.length() > blockSize) {
+            // 剪切
+            return key.substring(0, blockSize);
+        } else {
+            // 补零
+            return key + String.format("%1$0"+(blockSize-key.length())+"d",0);
         }
-        byte[] invalidKey = new byte[keySize];
-        for (int i = 0; i < keySize; i++) {
-            if (i < key.length - 1) {
-                invalidKey[i] = key[i];
-            } else {
-                invalidKey[i] = 0;
-            }
-        }
-        return invalidKey;
     }
 
 
@@ -186,50 +189,6 @@ class AESAlgorithmImpl {
         //SecretKeySpec类同时实现了Key和KeySpec接口
         SecretKey secretKey = new SecretKeySpec(keyBytes, algorithm);
         return secretKey;
-    }
-
-    /**
-     * 根据算法、工作模式，计算向量，返回空向量（全为0）
-     * @param algorithm
-     * @param workingMode
-     * @param padding
-     * @return
-     */
-    private static byte[] initIv(String algorithm, String workingMode, String padding) {
-        int blockSize = getAlgorithmBlockSize(algorithm, workingMode, padding);
-        byte[] iv = new byte[blockSize];
-        for (int i = 0; i < blockSize; i++) {
-            iv[i] = 0;// 全部为0，即相当于无向量
-        }
-        return iv;
-    }
-    // 根据key和算法获取向量（key不足8位时补0）
-    private static byte[] initKeyIv(byte[] key, String algorithm, String workingMode, String padding) {
-        int blockSize = getAlgorithmBlockSize(algorithm, workingMode, padding);
-        byte[] iv = new byte[blockSize];
-        for (int i = 0; i < blockSize; i++) {
-            if (i < key.length - 1) {
-                iv[i] = key[i];
-            } else {
-                iv[i] = 0;
-            }
-        }
-        return iv;
-    }
-    // 获取指定加密算法加密时的加密块大小
-    private static int getAlgorithmBlockSize(String algorithm, String workingMode, String padding) {
-        String fullAlg = algorithm + "/" + workingMode + "/" + padding;
-        Cipher cipher = null;
-        try {
-            cipher = Cipher.getInstance(fullAlg);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-        int blockSize = cipher.getBlockSize();
-
-        return blockSize;
     }
 
     /**

@@ -6,6 +6,14 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.nio.charset.Charset;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+import java.util.UUID;
+
 /**
  * @author 赵梓彧 - kitchen_dev@163.com
  * @date 2017-09-05
@@ -24,24 +32,38 @@ public class TestTextSignByKey {
 
     }
 
+    String data = "测试内容测试内容测试内容测试内容测试内容测试内容测试内容";
     @Test
     public void testRSA() throws Exception {
-        String data = "测试内容测试内容测试内容测试内容测试内容测试内容测试内容";
-        System.out.println("待签名数据：" + data);
-        long start = System.currentTimeMillis();
-        String sign = KitSignTextByKey.rsaSign(data, privateKey_PKCS8);
-        long end = System.currentTimeMillis();
-        System.err.println("生成签名：" + sign + "    用时：" + (end - start) + "ms");
+        String sign = "";
+        long sum = 0L;
+        long count = 1;
+        for (int i = 0; i < count; i++) {
+            data = UUID.randomUUID().toString();
+            System.out.println("待签名数据：" + data);
+            long start = System.nanoTime();
+            sign = KitSignTextByKey.rsaSign(data, privateKey_PKCS8);
+            long end = System.nanoTime();
+            System.err.println("生成签名：" + sign + "    用时：" + (end - start) + "ns");
+            sum += (end - start);
+        }
+        System.err.println("平均" + (sum / count) + "ns");
 
-        start = System.currentTimeMillis();
-        boolean result = KitSignTextByKey.verifyRsaSign(data, sign, publicKey);
-        end = System.currentTimeMillis();
-        System.err.println("校验签名结果：" + result + "    用时：" + (end - start) + "ms");
+        sum = 0L;
+        count = 10000;
+        for (int i = 0; i < count; i++) {
+            data = UUID.randomUUID().toString();
+            long start = System.nanoTime();
+            boolean result = KitSignTextByKey.verifyRsaSign(data, sign, publicKey);
+            long end = System.nanoTime();
+            System.err.println("校验签名结果：" + result + "    用时：" + (end - start) + "ns");
+            sum += (end - start);
+        }
+        System.err.println("平均" + (sum / count) + "ns");
     }
 
     @Test
     public void testRSA256() throws Exception {
-        String data = "测试内容测试内容测试内容测试内容测试内容测试内容测试内容";
         System.out.println("待签名数据：" + data);
         long start = System.currentTimeMillis();
         String sign = KitSignTextByKey.rsa256Sign(data, privateKey_PKCS8);
@@ -52,5 +74,71 @@ public class TestTextSignByKey {
         boolean result = KitSignTextByKey.verifyRsa256Sign(data, sign, publicKey);
         end = System.currentTimeMillis();
         System.err.println("校验签名结果：" + result + "    用时：" + (end - start) + "ms");
+    }
+
+    @Test
+    public void testMD5() throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+        long sum = 0L;
+        long count = 10000;
+        for (int i = 0; i < count; i++) {
+            data = UUID.randomUUID().toString();
+            long start = System.nanoTime();
+            byte[] digest = messageDigest.digest(data.getBytes(Charset.forName("UTF-8")));
+            long end = System.nanoTime();
+            System.err.println("结果：" + Base64.getEncoder().encodeToString(digest) + "    用时：" + (end - start) + "ns");
+            sum += (end - start);
+        }
+        System.err.println("平均" + (sum / count) + "ns");
+    }
+
+    @Test
+    public void testECDSA() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
+        System.out.println("生成ECC密钥对");
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(256);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        System.out.println(keyPair.getPrivate().getAlgorithm());
+        System.out.println(keyPair.getPrivate().getFormat());
+        System.out.println(Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+
+        System.out.println(keyPair.getPublic().getAlgorithm());
+        System.out.println(keyPair.getPublic().getFormat());
+        System.out.println(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+
+
+        byte[] privateKeyEnc = keyPair.getPrivate().getEncoded();
+        byte[] publicKeyEnc = keyPair.getPublic().getEncoded();
+
+        System.out.println("签名");
+        KeyFactory keyFactory = KeyFactory.getInstance("EC");
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyEnc);
+        PrivateKey priKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+        //构建签名
+        Signature signature = Signature.getInstance("SHA1withECDSA");
+        signature.initSign(priKey);
+        signature.update(data.getBytes());
+        byte [] result = signature.sign();   // 签名后的数据信息
+
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKeyEnc);
+        PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+        signature.initVerify(publicKey);
+
+        long sum = 0L;
+        long count = 1000;
+        System.out.println("验签");
+        for (int i = 0; i < count; i++) {
+            data = UUID.randomUUID().toString();
+            long start = System.nanoTime();
+            signature.update(data.getBytes());
+            boolean ok = signature.verify(result);  // 验证结果
+            System.out.println(ok);
+            long end = System.nanoTime();
+            System.err.println("校验签名结果：" + result + "    用时：" + (end - start) + "ns");
+            sum += (end - start);
+        }
+        System.err.println("平均" + (sum / count) + "ns");
+
     }
 }
